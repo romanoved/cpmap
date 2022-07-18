@@ -177,7 +177,7 @@ def get_html(args, fname, url):
     return cache_wrapper(fname, not args.disable_html_cache)(do_get_html)(url)
 
 
-#@cache_wrapper('cache/events.json')
+@cache_wrapper('cache/events.json')
 def get_events(args):
     url = urllib.parse.urljoin(RUNCITY_ROOT, 'events/archive')
     text = get_html(args, 'cache/events/archive.html', url)
@@ -216,22 +216,43 @@ def parse_event(args, event):
 
     routes = get_html(args, os.path.join('cache/routes_all', event['id']), all_routes_url)
     items = process_html(RouteParser, routes)
+    result = []
     for item in items:
         if 'longitude' not in item and 'latitude' not in item:
             continue
-        assert float(item['longitude'])
-        assert float(item['latitude'])
+        item['longitude'] = float(item['longitude'])
+        item['latitude'] = float(item['latitude'])
         item['url'] = urllib.parse.urljoin(all_routes_url, item['link'])
-    return items
+        result.append(item)
+    return result
 
 
-@cache_wrapper('result.json')
 def update_events(args):
-    result = []
+    features = []
     for event in get_events(args):
         parsed = cache_wrapper(event['parsed_path'], args.use_cache)(parse_event)(args, event)
-        result.extend(parsed)
-    return result
+        for item in parsed:
+            feature = {
+                'type': 'Feature',
+                'id': len(features),
+                'geometry': {
+                    'type': 'Point',
+                    'coordinates': [float(item['latitude']), float(item['longitude'])],
+                },
+                'properties': {
+                    'balloonContentHeader': event['title'] + ': ' + item['title'],
+                    'balloonContentBody': item.get('description', ''),
+                    'balloonContentFooter': '<a href="{0}">{0}</a>'.format(item['url']),
+                },
+            }
+            features.append(feature)
+    data = {
+        "type": "FeatureCollection",
+        "features": features,
+    }
+    js_data = 'function get_runcity_points() {return ' + json.dumps(data) + ';}'
+    with open('runcity_points.js', 'w') as fobj:
+        fobj.write(js_data)
 
 
 def main():
