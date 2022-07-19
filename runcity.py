@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import argparse
+import base64
 import html.parser
 import json
 import logging
@@ -250,7 +251,9 @@ def update_events(args):
         "type": "FeatureCollection",
         "features": features,
     }
-    js_data = 'function get_runcity_points() {return ' + json.dumps(data) + ';}'
+    js_data = 'function get_runcity_points() {{return JSON.parse(atob("{}"));}}'.format(
+        base64.b64encode(json.dumps(data).encode()).decode(),
+    )
     with open('runcity_points.js', 'w') as fobj:
         fobj.write(js_data)
 
