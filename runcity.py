@@ -243,7 +243,7 @@ def update_events(args):
                 'properties': {
                     'balloonContentHeader': event['title'] + ': ' + item['title'],
                     'balloonContentBody': item.get('description', ''),
-                    'balloonContentFooter': '<a href="{0}">{0}</a>'.format(item['url']),
+                    'balloonContentFooter': '<a href="{0}" target="_blank">{0}</a>'.format(item['url']),
                 },
             }
             features.append(feature)
