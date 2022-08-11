@@ -178,10 +178,9 @@ def get_html(args, fname, url):
     return cache_wrapper(fname, not args.disable_html_cache)(do_get_html)(url)
 
 
-@cache_wrapper('cache/events.json')
-def get_events(args):
+def do_get_events(args):
     url = urllib.parse.urljoin(RUNCITY_ROOT, 'events/archive')
-    text = get_html(args, 'cache/events/archive.html', url)
+    text = do_get_html(url)
     events = [
         {
             'id': os.path.basename(link.rstrip('/')),
@@ -195,6 +194,10 @@ def get_events(args):
         event['parsed_path'] = os.path.join('cache/parsed', event['id']) + '.json'
         event['is_parsed'] = os.path.exists(event['parsed_path'])
     return list(reversed(events))
+
+
+def get_events(args):
+    return cache_wrapper('cache/events.json', args.cache_events)(do_get_events)(args)
 
 
 def list_events(args):
@@ -262,6 +265,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--disable-html-cache', action='store_true')
     parser.add_argument('--use-cache', action='store_true')
+    parser.add_argument('--cache-events', action='store_true') 
     parser.add_argument('--list', action='store_true')
     parser.add_argument('--update', action='store_true')
     parser.add_argument('--verbose', '-v', action='store_true')
